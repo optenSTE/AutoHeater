@@ -67,7 +67,7 @@ byte debug_heater_state = 0;
 
 // чтение и запись значения типа byte в EEPROM
 bool save_EEPROM(byte value);
-byte read_EERPOM();
+byte read_EEPROM();
 
 // Проверяет статус двигателя (0-заглушен, 1-запущен, 2-запущен только что)
 EngineStates get_engine_state();
@@ -96,6 +96,8 @@ void setup()
   delay(100);
 
   
+
+  
   for(int i=0; i<3; i++)
   {
     digitalWrite(HEATER_PIN, 1);
@@ -111,13 +113,20 @@ void setup()
 //********************************************************************
 void loop() 
 {
-  switch (get_engine_state())
+  EngineStates cur_engine_state = get_engine_state();
+  switch (cur_engine_state)
   {  
     case ENGINE_STARTS:
-      // двигатель только что запущен 
-    
+    {
+      // engine starts just now
+
+      // apply the level from EEPROM
+      byte desired_heater_level = read_EEPROM();
+      set_heater(desired_heater_level);
+    }
     case ENGINE_RUNS:
-      // двигатель работает
+    {
+      // engine is running
       
       // если текущий уровень нагревателя отличается от записанного, то обновим записанное
       byte current_level = get_heater_level();
@@ -126,6 +135,7 @@ void loop()
         save_EEPROM(current_level);
         last_saved_heater_state = current_level;
       }
+    }
   }
 }
 
@@ -212,25 +222,25 @@ byte get_heater_level()
   bool led3 = LOW;
   
   #ifdef DEBUG
-    if (debug_heater_state = 0)
+    if (debug_heater_state == 0)
     {
       led1 = LOW;
       led2 = LOW;
       led3 = LOW;
     }
-    if (debug_heater_state = 1)
+    if (debug_heater_state == 1)
     {
       led1 = HIGH;
       led2 = LOW;
       led3 = LOW;
     }
-    if (debug_heater_state = 2)
+    if (debug_heater_state == 2)
     {
       led1 = HIGH;
       led2 = HIGH;
       led3 = LOW;
     }
-    if (debug_heater_state = 3)
+    if (debug_heater_state == 3)
     {
       led1 = HIGH;
       led2 = HIGH;
@@ -266,7 +276,7 @@ bool save_EEPROM(byte value)
   return true;
 }
 // чтение значения типа byte из EEPROM
-byte read_EERPOM()
+byte read_EEPROM()
 {
   // работа с EEPROM https://alexgyver.ru/lessons/eeprom/
 
@@ -284,3 +294,4 @@ byte read_EERPOM()
 
   return ret;
 }
+
